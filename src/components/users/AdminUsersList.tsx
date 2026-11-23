@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, Card, Empty, Flex, Grid, Input, Skeleton, Table, Tag, Typography, theme } from "antd";
+import { Alert, Button, Card, Empty, Flex, Grid, Input, Select, Skeleton, Table, Tag, Typography, theme } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import CheckCircleFilled from "@ant-design/icons/CheckCircleFilled";
 import CloseCircleOutlined from "@ant-design/icons/CloseCircleOutlined";
@@ -11,6 +11,7 @@ import type {
   AdminUserSummary,
   AdminUserWorkspaceMembership,
   UserRole,
+  UserType,
   WorkspaceRole,
 } from "@/models/AdminUser";
 
@@ -19,6 +20,11 @@ const { Text, Title } = Typography;
 const USER_TYPE_COLOR: Record<string, string> = {
   PERSONAL: "blue",
   ENTERPRISE: "green",
+};
+
+const USER_TYPE_LABEL: Record<UserType, string> = {
+  PERSONAL: "Personal",
+  ENTERPRISE: "Empresa",
 };
 
 const USER_ROLE_LABEL: Record<UserRole, string> = {
@@ -61,13 +67,20 @@ function visibleWorkspaces(user: AdminUserSummary): AdminUserWorkspaceMembership
   return user.workspaces.filter((w) => isVisibleWorkspaceName(w.workspaceName));
 }
 
-function matchesSearch(user: AdminUserSummary, query: string): boolean {
-  const haystack = `${displayName(user)} ${user.email}`.toLowerCase();
-  return haystack.includes(query.toLowerCase());
+// Accent- and case-insensitive: "jose" finds "José".
+function normalize(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 
+function matchesSearch(user: AdminUserSummary, query: string): boolean {
+  const haystack = normalize(`${user.givenName ?? ""} ${user.familyName ?? ""} ${user.email}`);
+  return haystack.includes(normalize(query.trim()));
+}
+
+const PAGE_SIZE = 25;
+
 function UserTypeTag({ user }: { user: AdminUserSummary }) {
-  return <Tag color={USER_TYPE_COLOR[user.userType] ?? "default"}>{user.userType}</Tag>;
+  return <Tag color={USER_TYPE_COLOR[user.userType] ?? "default"}>{USER_TYPE_LABEL[user.userType] ?? user.userType}</Tag>;
 }
 
 function UserRoleTags({ user }: { user: AdminUserSummary }) {
@@ -187,21 +200,45 @@ export default function AdminUsersList() {
   const screens = Grid.useBreakpoint();
   const { data: users, isLoading, isError } = useAdminUsers();
   const [search, setSearch] = useState("");
+  const [types, setTypes] = useState<UserType[]>([]);
+  const [roles, setRoles] = useState<UserRole[]>([]);
+  const [noWorkspace, setNoWorkspace] = useState(false);
+  const [pendingTour, setPendingTour] = useState(false);
 
+  const hasFilters = types.length > 0 || roles.length > 0 || noWorkspace || pendingTour;
   const filteredUsers = useMemo(() => {
     if (!users) return [];
-    if (!search.trim()) return users;
-    return users.filter((user) => matchesSearch(user, search));
-  }, [users, search]);
+    return users.filter(
+      (user) =>
+        (!search.trim() || matchesSearch(user, search)) &&
+        (types.length === 0 || types.includes(user.userType)) &&
+        (roles.length === 0 || user.userRoles.some((r) => roles.includes(r))) &&
+        (!noWorkspace || visibleWorkspaces(user).length === 0) &&
+        (!pendingTour || user.onboarding.some((o) => !o.hasSeenTour)),
+    );
+  }, [users, search, types, roles, noWorkspace, pendingTour]);
+
+  const clearAll = () => {
+    setSearch("");
+    setTypes([]);
+    setRoles([]);
+    setNoWorkspace(false);
+    setPendingTour(false);
+  };
 
   const columns: ColumnsType<AdminUserSummary> = [
-    { title: "Usuario", key: "user", render: (_, user) => <UserCell user={user} /> },
+    {
+      title: "Usuario",
+      key: "user",
+      sorter: (a, b) => displayName(a).localeCompare(displayName(b), "es", { sensitivity: "base" }),
+      render: (_, user) => <UserCell user={user} /> },
     { title: "Tipo", key: "type", width: 110, responsive: ["md"], render: (_, user) => <UserTypeTag user={user} /> },
     { title: "Rol", key: "roles", width: 170, responsive: ["md"], render: (_, user) => <UserRoleTags user={user} /> },
     {
       title: "Creado",
       key: "createdAt",
-      width: 110,
+      width: 120,
+      sorter: (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || 0,
       responsive: ["md"],
       render: (_, user) => <Text type="secondary">{formatDate(user.createdAt)}</Text>,
     },
@@ -253,12 +290,47 @@ export default function AdminUsersList() {
         <Input
           allowClear
           aria-label="Buscar usuarios por nombre o email"
-          placeholder="Buscar por nombre o email..."
+          placeholder="Buscar por nombre, apellido o email"
           prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ marginBottom: 16 }}
         />
+
+        <Flex gap={8} wrap align="center" style={{ margin: "12px 0 16px" }}>
+          <Select
+            mode="multiple"
+            allowClear
+            maxTagCount="responsive"
+            placeholder="Tipo"
+            aria-label="Filtrar por tipo"
+            style={{ minWidth: 140 }}
+            value={types}
+            onChange={setTypes}
+            options={Object.entries(USER_TYPE_LABEL).map(([value, label]) => ({ value, label }))}
+          />
+          <Select
+            mode="multiple"
+            allowClear
+            maxTagCount="responsive"
+            placeholder="Rol"
+            aria-label="Filtrar por rol"
+            style={{ minWidth: 140 }}
+            value={roles}
+            onChange={setRoles}
+            options={Object.entries(USER_ROLE_LABEL).map(([value, label]) => ({ value, label }))}
+          />
+          <Tag.CheckableTag checked={noWorkspace} onChange={setNoWorkspace}>
+            Sin workspace
+          </Tag.CheckableTag>
+          <Tag.CheckableTag checked={pendingTour} onChange={setPendingTour}>
+            Onboarding pendiente
+          </Tag.CheckableTag>
+          {users && !isLoading && (
+            <Text type="secondary" style={{ fontSize: 13, marginInlineStart: "auto" }} aria-live="polite">
+              {filteredUsers.length} de {users.length} usuarios
+            </Text>
+          )}
+        </Flex>
 
         {isError && (
           <Alert
@@ -272,7 +344,11 @@ export default function AdminUsersList() {
         {isLoading && <Skeleton active paragraph={{ rows: 4 }} />}
 
         {!isLoading && !isError && filteredUsers.length === 0 && (
-          <Empty description={search ? "Ningún usuario coincide con la búsqueda" : "No hay usuarios todavía"} />
+          <Empty
+            description={search || hasFilters ? "Ningún usuario coincide con la búsqueda" : "No hay usuarios todavía"}
+          >
+            {(search || hasFilters) && <Button onClick={clearAll}>{search ? "Limpiar búsqueda" : "Limpiar filtros"}</Button>}
+          </Empty>
         )}
 
         {!isLoading && !isError && filteredUsers.length > 0 && (
@@ -280,7 +356,7 @@ export default function AdminUsersList() {
             rowKey="id"
             columns={columns}
             dataSource={filteredUsers}
-            pagination={false}
+            pagination={{ pageSize: PAGE_SIZE, showSizeChanger: false, hideOnSinglePage: true }}
             tableLayout="fixed"
             sticky={{ offsetHeader: 56 }}
             expandable={{ expandedRowRender: (user) => <UserDetails user={user} compact={!screens.md} /> }}
