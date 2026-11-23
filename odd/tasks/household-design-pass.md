@@ -25,3 +25,8 @@ Delivery: ~400 authored-line heuristic; one commit per task on feat/household-de
 - T5: tsc -b OK, lint OK
 - T5 commit 053ce60
 - T6: tsc -b OK, lint OK, build OK (hash in git log: polish commit)
+
+## Round 2 (critique 24/40)
+- [ ] T7 clarify: no lock on the self card; per-case lock reason; visible fallback when callerLevel is missing
+- [ ] T8 adapt: lock reason visible on touch (short visible label or tap Popover)
+- [ ] T9 harden: keyboard-reachable "Próximamente" on disabled profile tile (aria-disabled), InputNumber autoFocus + inline save error in level Popover, no Tooltip/Popover/Popconfirm stacking
