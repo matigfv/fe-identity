@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, Button, Card, Empty, Flex, Grid, Input, Select, Skeleton, Table, Tag, Typography, theme } from "antd";
+import { Alert, Button, Card, ConfigProvider, Empty, Flex, Grid, Input, Select, Skeleton, Table, Tag, Typography, theme } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import CheckCircleFilled from "@ant-design/icons/CheckCircleFilled";
 import CloseCircleOutlined from "@ant-design/icons/CloseCircleOutlined";
@@ -254,14 +254,17 @@ export default function AdminUsersList() {
     {
       title: "Workspaces",
       key: "workspaces",
-      width: 140,
+      width: 220,
       responsive: ["md"],
-      align: "right",
       render: (_, user) => {
-        const count = visibleWorkspaces(user).length;
+        const names = visibleWorkspaces(user).map((w) => w.workspaceName);
+        if (names.length === 0) return <Text type="secondary">Sin workspaces</Text>;
+        const all = names.join(", ");
+        const extra = names.length - 2;
         return (
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            {count === 0 ? "Sin workspaces" : `${count} workspace${count > 1 ? "s" : ""}`}
+          <Text ellipsis={{ tooltip: all }} style={{ fontSize: 13 }}>
+            {names.slice(0, 2).join(", ")}
+            {extra > 0 && <Text type="secondary">{` +${extra}`}</Text>}
           </Text>
         );
       },
@@ -366,6 +369,9 @@ export default function AdminUsersList() {
         )}
 
         {!isLoading && !isError && filteredUsers.length > 0 && (
+          <ConfigProvider
+            theme={{ components: { Table: { headerBg: token.colorFillAlter, headerColor: token.colorTextSecondary } } }}
+          >
           <Table<AdminUserSummary>
             rowKey="id"
             columns={columns}
@@ -375,6 +381,7 @@ export default function AdminUsersList() {
             sticky={{ offsetHeader: 56 }}
             expandable={{ expandedRowRender: (user) => <UserDetails user={user} compact={!screens.md} /> }}
           />
+          </ConfigProvider>
         )}
       </Card>
     </Flex>
