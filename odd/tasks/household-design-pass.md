@@ -10,7 +10,7 @@ Delivery: ~400 authored-line heuristic; one commit per task on feat/household-de
 - [x] T3 adapt: fluid cards at 390px, Tooltip on truncated names
 - [x] T4 onboard: purposeful empty state, first-member nudge when alone
 - [x] T5 shape: restrained tier identity (header band/connector), light+dark safe
-- [ ] T6 polish: final pass
+- [x] T6 polish: final pass
 
 ## Evidence
 (commit ids and check results recorded as tasks close)
@@ -23,3 +23,5 @@ Delivery: ~400 authored-line heuristic; one commit per task on feat/household-de
 - T4: tsc -b OK, lint OK
 - T4 commit 563cd90
 - T5: tsc -b OK, lint OK
+- T5 commit 053ce60
+- T6: tsc -b OK, lint OK, build OK (hash in git log: polish commit)

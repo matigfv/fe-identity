@@ -317,7 +317,9 @@ export default function NavHeader() {
       <Divider style={{ margin: 0 }} />
       <Flex gap={8} wrap style={{ padding: "8px 16px" }}>
         <Tooltip title="Próximamente">
-          <ProfileTile icon={<SettingOutlined />} label="Configuración" disabled onClick={() => {}} />
+          <span style={{ display: "inline-flex", cursor: "not-allowed" }}>
+            <ProfileTile icon={<SettingOutlined />} label="Configuración" disabled onClick={() => {}} />
+          </span>
         </Tooltip>
         <ProfileTile
           icon={isDark ? <SunOutlined /> : <MoonOutlined />}
