@@ -13,7 +13,7 @@ Route: delegated writer. No test runner; checks: `pnpm exec tsc -b`, `pnpm lint`
 ## Evidence
 
 ## Round 2 (critique 27/40, on main)
-- [x] U5 harden: controlled pagination.current reset to 1 on search/filter change; accessible quick-filter toggles (replace CheckableTag with a control exposing toggle state to assistive tech)
-- [ ] U6 polish: share one navbar-height constant between NavHeader and the Table sticky offset
+- [x] U5 harden (cdf9147; tsc + lint clean): controlled pagination.current reset to 1 on search/filter change; accessible quick-filter toggles (replace CheckableTag with a control exposing toggle state to assistive tech)
+- [x] U6 polish (tsc + lint clean): share one navbar-height constant between NavHeader and the Table sticky offset
 - [ ] U7 clarify+adapt: visible "Limpiar" next to the count when search/filters are active; row expandable by click/Enter without breaking text selection or inner controls; Selects full-width on mobile
 Out of this round: contrast audit in both themes and gold color split (unverified, needs a browser).

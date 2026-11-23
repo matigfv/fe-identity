@@ -26,6 +26,7 @@ import { useKeycloak } from "@react-keycloak/web";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { Header } from "antd/es/layout/layout";
 import { useTheme } from "@/apis/theme/ThemeContext";
+import { NAV_HEIGHT } from "./navHeight";
 
 const { Text } = Typography;
 const { useBreakpoint } = Grid;
@@ -205,7 +206,7 @@ function NavSlider({ items, activeKey, onSelect, token }: NavSliderProps) {
               alignItems: "center",
               gap: 6,
               padding: "0 16px",
-              height: 56,
+              height: NAV_HEIGHT,
               border: "none",
               background: "transparent",
               cursor: "pointer",
@@ -403,7 +404,7 @@ export default function NavHeader() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          height: 56,
+          height: NAV_HEIGHT,
         }}
       >
         {isMobile ? (

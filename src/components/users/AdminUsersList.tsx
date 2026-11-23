@@ -6,6 +6,7 @@ import CloseCircleOutlined from "@ant-design/icons/CloseCircleOutlined";
 import SearchOutlined from "@ant-design/icons/SearchOutlined";
 import TeamOutlined from "@ant-design/icons/TeamOutlined";
 import { useAdminUsers } from "@/apis/hooks/useAdminUsers";
+import { NAV_HEIGHT } from "@/components/navHeight";
 import { isVisibleWorkspaceName } from "@/utils/workspaceVisibility";
 import type {
   AdminUserSummary,
@@ -388,7 +389,7 @@ export default function AdminUsersList() {
             dataSource={filteredUsers}
             pagination={{ current: page, onChange: setPage, pageSize: PAGE_SIZE, showSizeChanger: false, hideOnSinglePage: true }}
             tableLayout="fixed"
-            sticky={{ offsetHeader: 56 }}
+            sticky={{ offsetHeader: NAV_HEIGHT }}
             expandable={{ expandedRowRender: (user) => <UserDetails user={user} compact={!screens.md} /> }}
           />
           </ConfigProvider>
