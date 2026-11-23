@@ -49,6 +49,8 @@ function CreateHousehold() {
   );
 }
 
+const MAX_LEVEL = 99;
+
 function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerLevel: number }) {
   const [open, setOpen] = useState(false);
   const [level, setLevel] = useState<number | null>(member.level);
@@ -70,24 +72,30 @@ function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerL
   return (
     <Popover
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(next) => {
+        if (next) setLevel(member.level);
+        setOpen(next);
+      }}
       trigger="click"
       title="Cambiar nivel"
       content={
         <Flex gap={8}>
-          <InputNumber min={callerLevel + 1} precision={0} value={level} onChange={setLevel} />
+          <InputNumber min={callerLevel + 1} max={MAX_LEVEL} precision={0} value={level} onChange={setLevel} aria-label="Nivel" />
+          <Button onClick={() => setOpen(false)}>Cancelar</Button>
           <Button type="primary" loading={changeMutation.isPending} onClick={handleSave}>
             Guardar
           </Button>
         </Flex>
       }
     >
-      <Button size="small" icon={<EditOutlined />} aria-label={`Cambiar nivel de ${memberName(member)}`} />
+      <Tooltip title="Cambiar nivel">
+        <Button icon={<EditOutlined />} aria-label={`Cambiar nivel de ${memberName(member)}`} />
+      </Tooltip>
     </Popover>
   );
 }
 
-function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLevel: number }) {
+function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLevel?: number }) {
   const { token } = theme.useToken();
   const removeMutation = useRemoveHouseholdMember();
   const handleRemove = () =>
@@ -117,8 +125,8 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
             </span>
           </Tooltip>
         )}
-        {member.canManage && (
-          <Flex gap={4}>
+        {member.canManage && callerLevel !== undefined && (
+          <Flex gap={8}>
             <ChangeLevel member={member} callerLevel={callerLevel} />
             <Popconfirm
               title={`Sacar a ${memberName(member)} del household`}
@@ -128,7 +136,9 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
               okButtonProps={{ danger: true, loading: removeMutation.isPending }}
               onConfirm={handleRemove}
             >
-              <Button size="small" danger icon={<DeleteOutlined />} aria-label={`Sacar a ${memberName(member)}`} />
+              <Tooltip title="Sacar del household">
+                <Button danger icon={<DeleteOutlined />} aria-label={`Sacar a ${memberName(member)}`} />
+              </Tooltip>
             </Popconfirm>
           </Flex>
         )}
@@ -146,14 +156,16 @@ function tierCaption(level: number, index: number, count: number): string {
 
 function Tree({ household }: { household: Household }) {
   const { token } = theme.useToken();
-  const callerLevel = household.members.find((m) => m.self)?.level ?? 0;
+  // Without the caller's own member the level is unknown: never assume 0 (it would allow level 1).
+  const callerLevel = household.members.find((m) => m.self)?.level;
+  const canAdd = household.canManage && callerLevel !== undefined;
   const levels = [...new Set(household.members.map((m) => m.level))].sort((a, b) => a - b);
 
   return (
     <Flex vertical gap={16}>
       <Flex justify="space-between" align="center" wrap gap={8}>
         <Title level={3} style={{ margin: 0 }}>{household.name}</Title>
-        {household.canManage && <AddHouseholdMemberModal callerLevel={callerLevel} />}
+        {canAdd && <AddHouseholdMemberModal callerLevel={callerLevel} />}
       </Flex>
       <Text type="secondary">Nivel 1 = más permisos. Un número mayor tiene menos poder.</Text>
       <Flex vertical align="center">

@@ -77,7 +77,7 @@ export default function AddHouseholdMemberModal({ callerLevel }: Props) {
             extra={`Debe ser mayor a tu nivel (${callerLevel}). Mayor número = menos poder.`}
             rules={[{ required: true, message: "Por favor ingresá un nivel" }]}
           >
-            <InputNumber min={callerLevel + 1} precision={0} style={{ width: "100%" }} />
+            <InputNumber min={callerLevel + 1} max={99} precision={0} style={{ width: "100%" }} />
           </Form.Item>
         </Form>
       </Modal>

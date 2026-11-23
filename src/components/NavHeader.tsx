@@ -58,13 +58,20 @@ interface ProfileMenuItemProps {
 function ProfileMenuItem({ icon, label, onClick, danger }: ProfileMenuItemProps) {
   const { token } = theme.useToken();
   return (
-    <div
+    <button
+      type="button"
+      className="nav-focusable"
       onClick={onClick}
       style={{
         display: "flex",
         alignItems: "center",
         gap: 10,
+        width: "100%",
         padding: "8px 16px",
+        border: "none",
+        background: "transparent",
+        font: "inherit",
+        textAlign: "left",
         cursor: "pointer",
         color: danger ? token.colorError : token.colorText,
         transition: "background 0.15s ease",
@@ -78,7 +85,7 @@ function ProfileMenuItem({ icon, label, onClick, danger }: ProfileMenuItemProps)
     >
       <span style={{ fontSize: 15, display: "flex" }}>{icon}</span>
       <Text style={{ fontSize: 13, color: "inherit" }}>{label}</Text>
-    </div>
+    </button>
   );
 }
 
@@ -92,9 +99,15 @@ interface ProfileTileProps {
 function ProfileTile({ icon, label, onClick, disabled }: ProfileTileProps) {
   const { token } = theme.useToken();
   return (
-    <div
-      onClick={disabled ? undefined : onClick}
+    <button
+      type="button"
+      className="nav-focusable"
+      disabled={disabled}
+      onClick={onClick}
       style={{
+        border: "none",
+        background: "transparent",
+        font: "inherit",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -117,7 +130,7 @@ function ProfileTile({ icon, label, onClick, disabled }: ProfileTileProps) {
     >
       <span style={{ fontSize: 20, display: "flex" }}>{icon}</span>
       <Text style={{ fontSize: 11, color: "inherit" }}>{label}</Text>
-    </div>
+    </button>
   );
 }
 
@@ -178,6 +191,9 @@ function NavSlider({ items, activeKey, onSelect, token }: NavSliderProps) {
         return (
           <button
             key={item.key}
+            type="button"
+            className="nav-focusable"
+            aria-current={isActive ? "page" : undefined}
             ref={(el) => {
               itemRefs.current[idx] = el;
             }}
@@ -198,7 +214,6 @@ function NavSlider({ items, activeKey, onSelect, token }: NavSliderProps) {
               transition: `color 0.25s cubic-bezier(0.25, 1, 0.5, 1),
                            font-weight 0.25s cubic-bezier(0.25, 1, 0.5, 1)`,
               whiteSpace: "nowrap",
-              outline: "none",
             }}
             onMouseEnter={(e) => {
               if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = token.colorText;
@@ -337,18 +352,24 @@ export default function NavHeader() {
       onOpenChange={setProfileOpen}
       styles={{ root: { marginTop: 8 }, content: { padding: 0 } }}
     >
-      <span style={{ display: "inline-flex" }} aria-label="Perfil">
-        <Avatar
-          size={36}
-          icon={<UserOutlined />}
-          style={{ backgroundColor: token.colorPrimary, flexShrink: 0, cursor: "pointer" }}
-        />
-      </span>
+      <button
+        type="button"
+        className="nav-focusable"
+        aria-label="Perfil"
+        aria-haspopup="true"
+        aria-expanded={profileOpen}
+        style={{ display: "inline-flex", padding: 0, border: "none", background: "transparent", borderRadius: "50%", cursor: "pointer" }}
+      >
+        <Avatar size={36} icon={<UserOutlined />} style={{ backgroundColor: token.colorPrimary, flexShrink: 0 }} />
+      </button>
     </Popover>
   );
 
   const Logo = (
     <button
+      type="button"
+      className="nav-focusable"
+      aria-label="Ir al inicio"
       onClick={() => router.navigate({ to: "/" })}
       style={{
         background: "transparent",
@@ -363,12 +384,13 @@ export default function NavHeader() {
         transition: "outline 0.2s",
       }}
     >
-      <img src="/favicon.svg" alt="Identity Admin" style={{ height: 40, width: 40 }} />
+      <img src="/favicon.svg" alt="" style={{ height: 40, width: 40 }} />
     </button>
   );
 
   return (
     <>
+      <style>{`.nav-focusable:focus-visible{outline:2px solid ${token.colorPrimary};outline-offset:2px}`}</style>
       <Header
         style={{
           position: "sticky",

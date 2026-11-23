@@ -6,7 +6,7 @@ Delivery: ~400 authored-line heuristic; one commit per task on feat/household-de
 
 ## Tasks
 - [x] T1 clarify: level legend, "Nivel N · más poder" caption, drop duplicate Tag, lock + Tooltip on non-manageable members, consequence-aware remove confirm, Reintentar on load error
-- [ ] T2 harden: NavHeader focus-visible + keyboard-operable profile menu/tiles/avatar/logo, larger action buttons with Tooltips and 8px gap, InputNumber max, callerLevel fallback, Popover level reset + Cancel
+- [x] T2 harden: NavHeader focus-visible + keyboard-operable profile menu/tiles/avatar/logo, larger action buttons with Tooltips and 8px gap, InputNumber max, callerLevel fallback, Popover level reset + Cancel
 - [ ] T3 adapt: fluid cards at 390px, Tooltip on truncated names
 - [ ] T4 onboard: purposeful empty state, first-member nudge when alone
 - [ ] T5 shape: restrained tier identity (header band/connector), light+dark safe
@@ -15,4 +15,5 @@ Delivery: ~400 authored-line heuristic; one commit per task on feat/household-de
 ## Evidence
 (commit ids and check results recorded as tasks close)
 
-- T1: tsc -b OK, lint OK (commit recorded below)
+- T1: tsc -b OK, lint OK commit d35d6c1
+- T2: tsc -b OK, lint OK
