@@ -107,13 +107,13 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
   return (
     <Card
       size="small"
-      style={{ width: 240, borderColor: member.self ? token.colorPrimary : undefined }}
+      style={{ width: "min(100%, 240px)", borderColor: member.self ? token.colorPrimary : undefined }}
       styles={{ body: { padding: 12 } }}
     >
       <Flex vertical align="center" gap={4}>
         <Avatar style={{ background: token.colorPrimary }}>{memberName(member).slice(0, 2).toUpperCase()}</Avatar>
-        <Text strong ellipsis style={{ maxWidth: "100%" }}>{memberName(member)}</Text>
-        <Text type="secondary" ellipsis style={{ maxWidth: "100%", fontSize: 12 }}>{member.email}</Text>
+        <Text strong ellipsis={{ tooltip: memberName(member) }} style={{ maxWidth: "100%" }}>{memberName(member)}</Text>
+        <Text type="secondary" ellipsis={{ tooltip: member.email }} style={{ maxWidth: "100%", fontSize: 12 }}>{member.email}</Text>
         <Flex gap={4} wrap justify="center">
           {member.self && <Tag color="blue">Vos</Tag>}
           {member.supervised && <Tag color="gold" icon={<EyeOutlined />}>Supervisado</Tag>}
@@ -168,13 +168,13 @@ function Tree({ household }: { household: Household }) {
         {canAdd && <AddHouseholdMemberModal callerLevel={callerLevel} />}
       </Flex>
       <Text type="secondary">Nivel 1 = más permisos. Un número mayor tiene menos poder.</Text>
-      <Flex vertical align="center">
+      <Flex vertical align="center" style={{ width: "100%" }}>
         {levels.map((level, i) => (
-          <Flex key={level} vertical align="center" gap={8}>
+          <Flex key={level} vertical align="center" gap={8} style={{ width: "100%" }}>
             {/* Conecta tiers, no personas: el modelo no tiene aristas padre-hijo. */}
             {i > 0 && <div style={{ width: 2, height: 24, background: token.colorBorder }} />}
             <Text type="secondary">{tierCaption(level, i, levels.length)}</Text>
-            <Flex gap={16} wrap justify="center">
+            <Flex gap={16} wrap justify="center" style={{ width: "100%" }}>
               {household.members.filter((m) => m.level === level).map((m) => (
                 <MemberCard key={m.userId} member={m} callerLevel={callerLevel} />
               ))}
@@ -189,7 +189,7 @@ function Tree({ household }: { household: Household }) {
 export default function HouseholdTree() {
   const { data, error, isLoading, refetch } = useHousehold();
   return (
-    <Flex vertical style={{ padding: 24 }}>
+    <Flex vertical style={{ padding: 24, minWidth: 0 }}>
       {isLoading ? (
         <Skeleton active />
       ) : data ? (
