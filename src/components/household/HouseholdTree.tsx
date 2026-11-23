@@ -63,9 +63,11 @@ const MAX_LEVEL = 99;
 function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerLevel: number }) {
   const [open, setOpen] = useState(false);
   const [level, setLevel] = useState<number | null>(member.level);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const changeMutation = useChangeHouseholdMemberLevel();
   const handleSave = () => {
-    if (level === null) return;
+    if (level === null || changeMutation.isPending) return;
+    setSaveError(null);
     changeMutation.mutate(
       { userId: member.userId, level },
       {
@@ -74,7 +76,7 @@ function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerL
           setOpen(false);
         },
         onError: (error) =>
-          message.error(errorStatus(error) === 403 ? "No tenés permiso para asignar ese nivel" : "Error al cambiar el nivel"),
+          setSaveError(errorStatus(error) === 403 ? "No tenés permiso para asignar ese nivel" : "No se pudo cambiar el nivel. Probá de nuevo."),
       },
     );
   };
@@ -82,22 +84,45 @@ function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerL
     <Popover
       open={open}
       onOpenChange={(next) => {
-        if (next) setLevel(member.level);
+        if (next) {
+          setLevel(member.level);
+          setSaveError(null);
+        }
         setOpen(next);
       }}
       trigger="click"
       title="Cambiar nivel"
       content={
-        <Flex gap={8}>
-          <InputNumber min={callerLevel + 1} max={MAX_LEVEL} precision={0} value={level} onChange={setLevel} aria-label="Nivel" />
-          <Button onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button type="primary" loading={changeMutation.isPending} onClick={handleSave}>
-            Guardar
-          </Button>
+        <Flex vertical gap={8}>
+          <Flex gap={8}>
+            <InputNumber
+              autoFocus
+              min={callerLevel + 1}
+              max={MAX_LEVEL}
+              precision={0}
+              value={level}
+              onChange={(v) => {
+                setLevel(v);
+                setSaveError(null);
+              }}
+              onPressEnter={handleSave}
+              aria-label="Nivel"
+              status={saveError ? "error" : undefined}
+            />
+            <Button onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button type="primary" loading={changeMutation.isPending} onClick={handleSave}>
+              Guardar
+            </Button>
+          </Flex>
+          {saveError && (
+            <Text type="danger" role="alert">
+              {saveError}
+            </Text>
+          )}
         </Flex>
       }
     >
-      <Tooltip title="Cambiar nivel">
+      <Tooltip title="Cambiar nivel" open={open ? false : undefined}>
         <Button icon={<EditOutlined />} aria-label={`Cambiar nivel de ${memberName(member)}`} />
       </Tooltip>
     </Popover>
@@ -119,6 +144,7 @@ function lockLabel(member: HouseholdMember, callerLevel?: number): string {
 function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLevel?: number }) {
   const { token } = theme.useToken();
   const removeMutation = useRemoveHouseholdMember();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const handleRemove = () =>
     removeMutation.mutate(member.userId, {
       onSuccess: () => message.success(`${memberName(member)} fue eliminado del household`),
@@ -170,8 +196,10 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
               cancelText="Cancelar"
               okButtonProps={{ danger: true, loading: removeMutation.isPending }}
               onConfirm={handleRemove}
+              open={confirmOpen}
+              onOpenChange={setConfirmOpen}
             >
-              <Tooltip title="Sacar del household">
+              <Tooltip title="Sacar del household" open={confirmOpen ? false : undefined}>
                 <Button danger icon={<DeleteOutlined />} aria-label={`Sacar a ${memberName(member)}`} />
               </Tooltip>
             </Popconfirm>

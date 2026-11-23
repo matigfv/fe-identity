@@ -98,12 +98,13 @@ interface ProfileTileProps {
 
 function ProfileTile({ icon, label, onClick, disabled }: ProfileTileProps) {
   const { token } = theme.useToken();
-  return (
+  // aria-disabled (not disabled) keeps the tile focusable so the tooltip is keyboard-reachable.
+  const tile = (
     <button
       type="button"
       className="nav-focusable"
-      disabled={disabled}
-      onClick={onClick}
+      aria-disabled={disabled || undefined}
+      onClick={disabled ? undefined : onClick}
       style={{
         border: "none",
         background: "transparent",
@@ -132,6 +133,7 @@ function ProfileTile({ icon, label, onClick, disabled }: ProfileTileProps) {
       <Text style={{ fontSize: 11, color: "inherit" }}>{label}</Text>
     </button>
   );
+  return disabled ? <Tooltip title="Próximamente">{tile}</Tooltip> : tile;
 }
 
 // ── NavSlider ──────────────────────────────────────────────────────────────
@@ -316,11 +318,7 @@ export default function NavHeader() {
       </div>
       <Divider style={{ margin: 0 }} />
       <Flex gap={8} wrap style={{ padding: "8px 16px" }}>
-        <Tooltip title="Próximamente">
-          <span style={{ display: "inline-flex", cursor: "not-allowed" }}>
-            <ProfileTile icon={<SettingOutlined />} label="Configuración" disabled onClick={() => {}} />
-          </span>
-        </Tooltip>
+        <ProfileTile icon={<SettingOutlined />} label="Configuración" disabled onClick={() => {}} />
         <ProfileTile
           icon={isDark ? <SunOutlined /> : <MoonOutlined />}
           label={isDark ? "Modo claro" : "Modo oscuro"}
