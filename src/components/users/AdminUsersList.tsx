@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type Key } from "react";
 import { Alert, Button, Card, Checkbox, ConfigProvider, Empty, Flex, Grid, Input, Select, Skeleton, Table, Tag, Typography, theme } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import CheckCircleFilled from "@ant-design/icons/CheckCircleFilled";
@@ -215,6 +215,7 @@ export default function AdminUsersList() {
   const [noWorkspace, setNoWorkspace] = useState(false);
   const [pendingTour, setPendingTour] = useState(false);
   const [page, setPage] = useState(1);
+  const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
 
   const hasFilters = types.length > 0 || roles.length > 0 || noWorkspace || pendingTour;
   const filteredUsers = useMemo(() => {
@@ -236,6 +237,9 @@ export default function AdminUsersList() {
       set(value);
       setPage(1);
     };
+
+  const toggleRow = (id: Key) =>
+    setExpandedKeys((keys) => (keys.includes(id) ? keys.filter((k) => k !== id) : [...keys, id]));
 
   const clearAll = () => {
     setPage(1);
@@ -326,7 +330,7 @@ export default function AdminUsersList() {
             maxTagCount="responsive"
             placeholder="Tipo"
             aria-label="Filtrar por tipo"
-            style={{ minWidth: 140 }}
+            style={{ minWidth: 140, width: screens.md ? undefined : "100%" }}
             value={types}
             onChange={resetPage(setTypes)}
             options={Object.entries(USER_TYPE_LABEL).map(([value, label]) => ({ value, label }))}
@@ -337,7 +341,7 @@ export default function AdminUsersList() {
             maxTagCount="responsive"
             placeholder="Rol"
             aria-label="Filtrar por rol"
-            style={{ minWidth: 140 }}
+            style={{ minWidth: 140, width: screens.md ? undefined : "100%" }}
             value={roles}
             onChange={resetPage(setRoles)}
             options={Object.entries(USER_ROLE_LABEL).map(([value, label]) => ({ value, label }))}
@@ -349,9 +353,16 @@ export default function AdminUsersList() {
             Onboarding pendiente
           </Checkbox>
           {users && !isLoading && (
-            <Text type="secondary" style={{ fontSize: 13, marginInlineStart: "auto" }} aria-live="polite">
-              {filteredUsers.length} de {users.length} usuarios
-            </Text>
+            <Flex align="center" gap={4} style={{ marginInlineStart: "auto" }}>
+              <Text type="secondary" style={{ fontSize: 13 }} aria-live="polite">
+                {filteredUsers.length} de {users.length} usuarios
+              </Text>
+              {(search.trim() || hasFilters) && (
+                <Button type="link" size="small" onClick={clearAll}>
+                  Limpiar
+                </Button>
+              )}
+            </Flex>
           )}
         </Flex>
 
@@ -390,7 +401,20 @@ export default function AdminUsersList() {
             pagination={{ current: page, onChange: setPage, pageSize: PAGE_SIZE, showSizeChanger: false, hideOnSinglePage: true }}
             tableLayout="fixed"
             sticky={{ offsetHeader: NAV_HEIGHT }}
-            expandable={{ expandedRowRender: (user) => <UserDetails user={user} compact={!screens.md} /> }}
+            expandable={{
+              expandedRowKeys: expandedKeys,
+              onExpand: (_, user) => toggleRow(user.id),
+              expandedRowRender: (user) => <UserDetails user={user} compact={!screens.md} />,
+            }}
+            // Not expandRowByClick: it ignores text selection. The chevron button stays the keyboard path.
+            onRow={(user) => ({
+              style: { cursor: "pointer" },
+              onClick: (e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest("button, a, input, [role='button']") || window.getSelection()?.toString()) return;
+                toggleRow(user.id);
+              },
+            })}
           />
           </ConfigProvider>
         )}
