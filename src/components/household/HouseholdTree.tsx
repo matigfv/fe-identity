@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Alert, Avatar, Button, Card, Empty, Flex, Form, Input, InputNumber, Popconfirm, Popover, Skeleton, Tag, Typography, message, theme } from "antd";
+import { Alert, Avatar, Button, Card, Empty, Flex, Form, Input, InputNumber, Popconfirm, Popover, Skeleton, Tag, Tooltip, Typography, message, theme } from "antd";
 import DeleteOutlined from "@ant-design/icons/DeleteOutlined";
 import EditOutlined from "@ant-design/icons/EditOutlined";
 import EyeOutlined from "@ant-design/icons/EyeOutlined";
+import LockOutlined from "@ant-design/icons/LockOutlined";
 import { useHousehold, isHouseholdNotFound } from "@/apis/hooks/useHousehold";
 import {
   useChangeHouseholdMemberLevel,
@@ -106,15 +107,22 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
         <Text strong ellipsis style={{ maxWidth: "100%" }}>{memberName(member)}</Text>
         <Text type="secondary" ellipsis style={{ maxWidth: "100%", fontSize: 12 }}>{member.email}</Text>
         <Flex gap={4} wrap justify="center">
-          <Tag>Nivel {member.level}</Tag>
           {member.self && <Tag color="blue">Vos</Tag>}
           {member.supervised && <Tag color="gold" icon={<EyeOutlined />}>Supervisado</Tag>}
         </Flex>
+        {!member.canManage && (
+          <Tooltip title="No podés gestionar a este miembro">
+            <span tabIndex={0} role="img" aria-label="No podés gestionar a este miembro" style={{ color: token.colorTextSecondary }}>
+              <LockOutlined />
+            </span>
+          </Tooltip>
+        )}
         {member.canManage && (
           <Flex gap={4}>
             <ChangeLevel member={member} callerLevel={callerLevel} />
             <Popconfirm
               title={`Sacar a ${memberName(member)} del household`}
+              description="Va a perder el acceso a este household."
               okText="Sacar"
               cancelText="Cancelar"
               okButtonProps={{ danger: true, loading: removeMutation.isPending }}
@@ -129,6 +137,13 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
   );
 }
 
+// Honest for every tier: only the extremes of the visible range are compared.
+function tierCaption(level: number, index: number, count: number): string {
+  if (count > 1 && index === 0) return `Nivel ${level} · más poder`;
+  if (count > 1 && index === count - 1) return `Nivel ${level} · menos poder`;
+  return `Nivel ${level}`;
+}
+
 function Tree({ household }: { household: Household }) {
   const { token } = theme.useToken();
   const callerLevel = household.members.find((m) => m.self)?.level ?? 0;
@@ -140,12 +155,13 @@ function Tree({ household }: { household: Household }) {
         <Title level={3} style={{ margin: 0 }}>{household.name}</Title>
         {household.canManage && <AddHouseholdMemberModal callerLevel={callerLevel} />}
       </Flex>
+      <Text type="secondary">Nivel 1 = más permisos. Un número mayor tiene menos poder.</Text>
       <Flex vertical align="center">
         {levels.map((level, i) => (
           <Flex key={level} vertical align="center" gap={8}>
             {/* Conecta tiers, no personas: el modelo no tiene aristas padre-hijo. */}
             {i > 0 && <div style={{ width: 2, height: 24, background: token.colorBorder }} />}
-            <Text type="secondary">Nivel {level}</Text>
+            <Text type="secondary">{tierCaption(level, i, levels.length)}</Text>
             <Flex gap={16} wrap justify="center">
               {household.members.filter((m) => m.level === level).map((m) => (
                 <MemberCard key={m.userId} member={m} callerLevel={callerLevel} />
@@ -159,7 +175,7 @@ function Tree({ household }: { household: Household }) {
 }
 
 export default function HouseholdTree() {
-  const { data, error, isLoading } = useHousehold();
+  const { data, error, isLoading, refetch } = useHousehold();
   return (
     <Flex vertical style={{ padding: 24 }}>
       {isLoading ? (
@@ -169,7 +185,12 @@ export default function HouseholdTree() {
       ) : isHouseholdNotFound(error) ? (
         <CreateHousehold />
       ) : (
-        <Alert type="error" showIcon message="No se pudo cargar el household" />
+        <Alert
+          type="error"
+          showIcon
+          message="No se pudo cargar el household"
+          action={<Button size="small" onClick={() => refetch()}>Reintentar</Button>}
+        />
       )}
     </Flex>
   );
