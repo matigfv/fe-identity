@@ -104,6 +104,14 @@ function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerL
   );
 }
 
+// Only claims what the model knows: a level comparison, otherwise a neutral message.
+function lockReason(member: HouseholdMember, callerLevel?: number): string {
+  if (callerLevel !== undefined && member.level <= callerLevel) {
+    return "Tiene tu mismo nivel o uno superior, por eso no podés gestionarlo";
+  }
+  return "No tenés permiso para gestionar a este miembro";
+}
+
 function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLevel?: number }) {
   const { token } = theme.useToken();
   const removeMutation = useRemoveHouseholdMember();
@@ -127,12 +135,17 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
           {member.self && <Tag color="blue">Vos</Tag>}
           {member.supervised && <Tag color="gold" icon={<EyeOutlined />}>Supervisado</Tag>}
         </Flex>
-        {!member.canManage && (
-          <Tooltip title="No podés gestionar a este miembro">
-            <span tabIndex={0} role="img" aria-label="No podés gestionar a este miembro" style={{ color: token.colorTextSecondary }}>
+        {!member.canManage && !member.self && (
+          <Tooltip title={lockReason(member, callerLevel)}>
+            <span tabIndex={0} role="img" aria-label={lockReason(member, callerLevel)} style={{ color: token.colorTextSecondary }}>
               <LockOutlined />
             </span>
           </Tooltip>
+        )}
+        {member.canManage && callerLevel === undefined && (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Acciones no disponibles: no pudimos determinar tu nivel.
+          </Text>
         )}
         {member.canManage && callerLevel !== undefined && (
           <Flex gap={8}>
