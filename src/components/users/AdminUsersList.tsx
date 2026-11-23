@@ -29,8 +29,8 @@ const USER_TYPE_LABEL: Record<UserType, string> = {
 
 const USER_ROLE_LABEL: Record<UserRole, string> = {
   ROLE_ADMIN: "Admin",
-  ROLE_FAMILY: "Family",
-  ROLE_GUEST: "Guest",
+  ROLE_FAMILY: "Familia",
+  ROLE_GUEST: "Invitado",
 };
 
 const USER_ROLE_COLOR: Record<UserRole, string> = {
@@ -40,7 +40,7 @@ const USER_ROLE_COLOR: Record<UserRole, string> = {
 };
 
 const WORKSPACE_ROLE_LABEL: Record<WorkspaceRole, string> = {
-  OWNER: "Owner",
+  OWNER: "Propietario",
   COLLABORATOR: "Colaborador",
   READ_ONLY: "Solo lectura",
 };
@@ -57,6 +57,12 @@ function formatDate(iso: string | null): string {
   if (!iso) return "—";
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? "—" : dateFormatter.format(date);
+}
+
+// "api-movements" -> "Movements"
+function humanizeApi(api: string): string {
+  const name = api.replace(/^api-/, "").replace(/[-_]+/g, " ").trim();
+  return name ? name.charAt(0).toUpperCase() + name.slice(1) : api;
 }
 
 function displayName(user: AdminUserSummary): string {
@@ -161,6 +167,9 @@ function UserDetails({ user, compact }: { user: AdminUserSummary; compact: boole
       <Text type="secondary" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
         Onboarding
       </Text>
+      <Text type="secondary" style={{ display: "block", fontSize: 13, marginTop: 4 }}>
+        Tour completo: ya recorrió la guía inicial de la app. Tour pendiente: todavía no la vio.
+      </Text>
       <Flex vertical style={{ marginTop: 8 }}>
         {user.onboarding.length === 0 ? (
           <Text type="secondary" style={{ fontSize: 13 }}>
@@ -177,7 +186,7 @@ function UserDetails({ user, compact }: { user: AdminUserSummary; compact: boole
                 borderTop: idx > 0 ? `1px solid ${token.colorBorderSecondary}` : undefined,
               }}
             >
-              <Text>{o.api}</Text>
+              <Text>{humanizeApi(o.api)}</Text>
               {o.hasSeenTour ? (
                 <Tag color="success" icon={<CheckCircleFilled />}>
                   Tour completo
@@ -198,7 +207,7 @@ function UserDetails({ user, compact }: { user: AdminUserSummary; compact: boole
 export default function AdminUsersList() {
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
-  const { data: users, isLoading, isError } = useAdminUsers();
+  const { data: users, isLoading, isError, refetch, isFetching } = useAdminUsers();
   const [search, setSearch] = useState("");
   const [types, setTypes] = useState<UserType[]>([]);
   const [roles, setRoles] = useState<UserRole[]>([]);
@@ -337,7 +346,12 @@ export default function AdminUsersList() {
             type="error"
             showIcon
             title="No se pudo cargar el listado de usuarios"
-            description="Probá recargar la página. Si el problema persiste, puede ser que api-identity no esté disponible."
+            description="Revisá tu conexión y volvé a intentar. Si el problema sigue, avisale al equipo."
+            action={
+              <Button size="small" loading={isFetching} onClick={() => void refetch()}>
+                Reintentar
+              </Button>
+            }
           />
         )}
 
