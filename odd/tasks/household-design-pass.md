@@ -9,7 +9,7 @@ Delivery: ~400 authored-line heuristic; one commit per task on feat/household-de
 - [x] T2 harden: NavHeader focus-visible + keyboard-operable profile menu/tiles/avatar/logo, larger action buttons with Tooltips and 8px gap, InputNumber max, callerLevel fallback, Popover level reset + Cancel
 - [x] T3 adapt: fluid cards at 390px, Tooltip on truncated names
 - [x] T4 onboard: purposeful empty state, first-member nudge when alone
-- [ ] T5 shape: restrained tier identity (header band/connector), light+dark safe
+- [x] T5 shape: restrained tier identity (header band/connector), light+dark safe
 - [ ] T6 polish: final pass
 
 ## Evidence
@@ -21,3 +21,5 @@ Delivery: ~400 authored-line heuristic; one commit per task on feat/household-de
 - T3: tsc -b OK, lint OK
 - T3 commit 4fd128e
 - T4: tsc -b OK, lint OK
+- T4 commit 563cd90
+- T5: tsc -b OK, lint OK

@@ -184,8 +184,13 @@ function Tree({ household }: { household: Household }) {
         {levels.map((level, i) => (
           <Flex key={level} vertical align="center" gap={8} style={{ width: "100%" }}>
             {/* Conecta tiers, no personas: el modelo no tiene aristas padre-hijo. */}
-            {i > 0 && <div style={{ width: 2, height: 24, background: token.colorBorder }} />}
-            <Text type="secondary">{tierCaption(level, i, levels.length)}</Text>
+            {i > 0 && <div style={{ width: 2, height: 28, background: token.colorTextQuaternary }} />}
+            <Text
+              type="secondary"
+              style={{ background: token.colorFillTertiary, borderRadius: token.borderRadiusSM, padding: "2px 12px" }}
+            >
+              {tierCaption(level, i, levels.length)}
+            </Text>
             <Flex gap={16} wrap justify="center" style={{ width: "100%" }}>
               {household.members.filter((m) => m.level === level).map((m) => (
                 <MemberCard key={m.userId} member={m} callerLevel={callerLevel} />
