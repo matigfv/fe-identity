@@ -36,7 +36,16 @@ function CreateHousehold() {
         message.error(errorStatus(error) === 409 ? "Ya pertenecés a un household" : "Error al crear el household"),
     });
   return (
-    <Empty description="Todavía no pertenecés a ningún household">
+    <Empty
+      description={
+        <Flex vertical gap={4}>
+          <Text>Todavía no pertenecés a ningún household</Text>
+          <Text type="secondary">
+            Un household agrupa personas por niveles: el nivel 1 tiene más permisos y podés sumar gente en niveles más bajos.
+          </Text>
+        </Flex>
+      }
+    >
       <Form layout="inline" onFinish={handleSubmit} style={{ justifyContent: "center" }}>
         <Form.Item name="name" rules={[{ required: true, message: "Ingresá un nombre" }]}>
           <Input placeholder="Nombre del household" />
@@ -168,6 +177,9 @@ function Tree({ household }: { household: Household }) {
         {canAdd && <AddHouseholdMemberModal callerLevel={callerLevel} />}
       </Flex>
       <Text type="secondary">Nivel 1 = más permisos. Un número mayor tiene menos poder.</Text>
+      {canAdd && household.members.length === 1 && (
+        <Alert type="info" showIcon message="Sos el único miembro por ahora. Agregá a la primera persona con «Agregar miembro»." />
+      )}
       <Flex vertical align="center" style={{ width: "100%" }}>
         {levels.map((level, i) => (
           <Flex key={level} vertical align="center" gap={8} style={{ width: "100%" }}>
