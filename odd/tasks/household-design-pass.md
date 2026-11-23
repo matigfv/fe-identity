@@ -28,5 +28,7 @@ Delivery: ~400 authored-line heuristic; one commit per task on feat/household-de
 
 ## Round 2 (critique 24/40)
 - [x] T7 clarify: no lock on the self card; per-case lock reason; visible fallback when callerLevel is missing
-- [ ] T8 adapt: lock reason visible on touch (short visible label or tap Popover)
+- [x] T8 adapt: lock reason visible on touch (short visible label or tap Popover)
 - [ ] T9 harden: keyboard-reachable "Próximamente" on disabled profile tile (aria-disabled), InputNumber autoFocus + inline save error in level Popover, no Tooltip/Popover/Popconfirm stacking
+- T7: tsc -b OK, lint OK, commit fb79f7d
+- T8: tsc -b OK, lint OK (commit: next in git log, "visible lock label")

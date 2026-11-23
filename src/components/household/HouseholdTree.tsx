@@ -112,6 +112,10 @@ function lockReason(member: HouseholdMember, callerLevel?: number): string {
   return "No tenés permiso para gestionar a este miembro";
 }
 
+function lockLabel(member: HouseholdMember, callerLevel?: number): string {
+  return callerLevel !== undefined && member.level <= callerLevel ? "Mismo nivel o superior" : "Sin permiso";
+}
+
 function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLevel?: number }) {
   const { token } = theme.useToken();
   const removeMutation = useRemoveHouseholdMember();
@@ -137,9 +141,18 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
         </Flex>
         {!member.canManage && !member.self && (
           <Tooltip title={lockReason(member, callerLevel)}>
-            <span tabIndex={0} role="img" aria-label={lockReason(member, callerLevel)} style={{ color: token.colorTextSecondary }}>
+            <Flex
+              tabIndex={0}
+              role="img"
+              aria-label={lockReason(member, callerLevel)}
+              align="center"
+              gap={4}
+              style={{ color: token.colorTextSecondary, fontSize: 12, maxWidth: "100%" }}
+            >
               <LockOutlined />
-            </span>
+              {/* Visible without hover: touch has no tooltip. */}
+              <span>{lockLabel(member, callerLevel)}</span>
+            </Flex>
           </Tooltip>
         )}
         {member.canManage && callerLevel === undefined && (
