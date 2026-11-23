@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
-import { Alert, Card, Col, Divider, Empty, Flex, Input, Row, Skeleton, Tag, Typography, theme } from "antd";
+import { Alert, Card, Empty, Flex, Grid, Input, Skeleton, Table, Tag, Typography, theme } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import CheckCircleFilled from "@ant-design/icons/CheckCircleFilled";
 import CloseCircleOutlined from "@ant-design/icons/CloseCircleOutlined";
-import DownOutlined from "@ant-design/icons/DownOutlined";
-import RightOutlined from "@ant-design/icons/RightOutlined";
 import SearchOutlined from "@ant-design/icons/SearchOutlined";
 import TeamOutlined from "@ant-design/icons/TeamOutlined";
 import { useAdminUsers } from "@/apis/hooks/useAdminUsers";
@@ -15,7 +14,7 @@ import type {
   WorkspaceRole,
 } from "@/models/AdminUser";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 const USER_TYPE_COLOR: Record<string, string> = {
   PERSONAL: "blue",
@@ -50,14 +49,12 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: 
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
-  return dateFormatter.format(new Date(iso));
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "—" : dateFormatter.format(date);
 }
 
 function displayName(user: AdminUserSummary): string {
-  if (user.givenName) {
-    return user.familyName ? `${user.givenName} ${user.familyName}` : user.givenName;
-  }
-  return user.email;
+  return [user.givenName, user.familyName].filter(Boolean).join(" ") || user.email;
 }
 
 function visibleWorkspaces(user: AdminUserSummary): AdminUserWorkspaceMembership[] {
@@ -69,14 +66,54 @@ function matchesSearch(user: AdminUserSummary, query: string): boolean {
   return haystack.includes(query.toLowerCase());
 }
 
-const COL_PADDING = "10px 16px";
+function UserTypeTag({ user }: { user: AdminUserSummary }) {
+  return <Tag color={USER_TYPE_COLOR[user.userType] ?? "default"}>{user.userType}</Tag>;
+}
 
-function UserDetails({ user }: { user: AdminUserSummary }) {
+function UserRoleTags({ user }: { user: AdminUserSummary }) {
+  if (user.userRoles.length === 0) return <Text type="secondary">—</Text>;
+  return (
+    <Flex gap={4} wrap>
+      {user.userRoles.map((role) => (
+        <Tag key={role} color={USER_ROLE_COLOR[role] ?? "default"} style={{ marginInlineEnd: 0 }}>
+          {USER_ROLE_LABEL[role] ?? role}
+        </Tag>
+      ))}
+    </Flex>
+  );
+}
+
+function UserCell({ user }: { user: AdminUserSummary }) {
+  const name = displayName(user);
+  return (
+    <Flex vertical style={{ minWidth: 0 }}>
+      <Text strong ellipsis={{ tooltip: name }}>
+        {name}
+      </Text>
+      {name !== user.email && (
+        <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: user.email }}>
+          {user.email}
+        </Text>
+      )}
+    </Flex>
+  );
+}
+
+function UserDetails({ user, compact }: { user: AdminUserSummary; compact: boolean }) {
   const { token } = theme.useToken();
   const workspaces = visibleWorkspaces(user);
 
   return (
     <div style={{ padding: "12px 16px 16px", background: token.colorFillAlter }}>
+      {compact && (
+        <Flex gap={8} wrap align="center" style={{ marginBottom: 16 }}>
+          <UserTypeTag user={user} />
+          <UserRoleTags user={user} />
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            Creado {formatDate(user.createdAt)}
+          </Text>
+        </Flex>
+      )}
       <Text type="secondary" style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.4 }}>
         Workspaces
       </Text>
@@ -145,76 +182,11 @@ function UserDetails({ user }: { user: AdminUserSummary }) {
   );
 }
 
-function UserRow({
-  user,
-  expanded,
-  onToggle,
-}: {
-  user: AdminUserSummary;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const workspaces = visibleWorkspaces(user);
-
-  return (
-    <Card
-      hoverable
-      onClick={onToggle}
-      style={{ marginBottom: 8, borderRadius: 6, cursor: "pointer" }}
-      styles={{ body: { padding: 0 } }}
-    >
-      <Row justify="center" align="middle" style={{ padding: COL_PADDING }}>
-        <Col span={1}>{expanded ? <DownOutlined /> : <RightOutlined />}</Col>
-        <Col span={7}>
-          <Flex vertical gap={0}>
-            <Text strong>{displayName(user)}</Text>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {user.email}
-            </Text>
-          </Flex>
-        </Col>
-        <Col span={3}>
-          <Tag color={USER_TYPE_COLOR[user.userType] ?? "default"}>{user.userType}</Tag>
-        </Col>
-        <Col span={4}>
-          <Flex gap={4} wrap>
-            {user.userRoles.length === 0 && <Text type="secondary">—</Text>}
-            {user.userRoles.map((role) => (
-              <Tag key={role} color={USER_ROLE_COLOR[role] ?? "default"}>
-                {USER_ROLE_LABEL[role] ?? role}
-              </Tag>
-            ))}
-          </Flex>
-        </Col>
-        <Col span={4}>
-          <Text type="secondary">{formatDate(user.createdAt)}</Text>
-        </Col>
-        <Col span={5} style={{ textAlign: "right" }}>
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            {workspaces.length === 0
-              ? "Sin workspaces"
-              : `${workspaces.length} workspace${workspaces.length > 1 ? "s" : ""}`}
-          </Text>
-        </Col>
-      </Row>
-
-      {expanded && (
-        <>
-          <Divider style={{ margin: 0 }} />
-          <div onClick={(e) => e.stopPropagation()} style={{ cursor: "default" }}>
-            <UserDetails user={user} />
-          </div>
-        </>
-      )}
-    </Card>
-  );
-}
-
 export default function AdminUsersList() {
   const { token } = theme.useToken();
+  const screens = Grid.useBreakpoint();
   const { data: users, isLoading, isError } = useAdminUsers();
   const [search, setSearch] = useState("");
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const filteredUsers = useMemo(() => {
     if (!users) return [];
@@ -222,14 +194,33 @@ export default function AdminUsersList() {
     return users.filter((user) => matchesSearch(user, search));
   }, [users, search]);
 
-  const toggleExpanded = (id: number) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const columns: ColumnsType<AdminUserSummary> = [
+    { title: "Usuario", key: "user", render: (_, user) => <UserCell user={user} /> },
+    { title: "Tipo", key: "type", width: 110, responsive: ["md"], render: (_, user) => <UserTypeTag user={user} /> },
+    { title: "Rol", key: "roles", width: 170, responsive: ["md"], render: (_, user) => <UserRoleTags user={user} /> },
+    {
+      title: "Creado",
+      key: "createdAt",
+      width: 110,
+      responsive: ["md"],
+      render: (_, user) => <Text type="secondary">{formatDate(user.createdAt)}</Text>,
+    },
+    {
+      title: "Workspaces",
+      key: "workspaces",
+      width: 140,
+      responsive: ["md"],
+      align: "right",
+      render: (_, user) => {
+        const count = visibleWorkspaces(user).length;
+        return (
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            {count === 0 ? "Sin workspaces" : `${count} workspace${count > 1 ? "s" : ""}`}
+          </Text>
+        );
+      },
+    },
+  ];
 
   return (
     <Flex vertical gap={16}>
@@ -250,10 +241,9 @@ export default function AdminUsersList() {
             <TeamOutlined style={{ fontSize: 16, color: token.colorPrimary }} />
           </div>
           <div>
-            <Text strong style={{ fontSize: 16 }}>
+            <Title level={1} style={{ fontSize: 16, margin: 0, lineHeight: 1.5 }}>
               Usuarios
-            </Text>
-            <br />
+            </Title>
             <Text type="secondary" style={{ fontSize: 13 }}>
               Todos los usuarios de la instancia y a qué workspaces pertenecen
             </Text>
@@ -262,6 +252,7 @@ export default function AdminUsersList() {
 
         <Input
           allowClear
+          aria-label="Buscar usuarios por nombre o email"
           placeholder="Buscar por nombre o email..."
           prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
           value={search}
@@ -283,35 +274,19 @@ export default function AdminUsersList() {
         {!isLoading && !isError && filteredUsers.length === 0 && (
           <Empty description={search ? "Ningún usuario coincide con la búsqueda" : "No hay usuarios todavía"} />
         )}
+
+        {!isLoading && !isError && filteredUsers.length > 0 && (
+          <Table<AdminUserSummary>
+            rowKey="id"
+            columns={columns}
+            dataSource={filteredUsers}
+            pagination={false}
+            tableLayout="fixed"
+            sticky={{ offsetHeader: 56 }}
+            expandable={{ expandedRowRender: (user) => <UserDetails user={user} compact={!screens.md} /> }}
+          />
+        )}
       </Card>
-
-      {!isLoading && !isError && filteredUsers.length > 0 && (
-        <>
-          <Card style={{ marginBottom: -8, borderRadius: 6 }} styles={{ body: { padding: COL_PADDING } }}>
-            <Row justify="center" align="middle">
-              <Col span={1} />
-              <Col span={7}>Usuario</Col>
-              <Col span={3}>Tipo</Col>
-              <Col span={4}>Rol</Col>
-              <Col span={4}>Creado</Col>
-              <Col span={5} style={{ textAlign: "right" }}>
-                Workspaces
-              </Col>
-            </Row>
-          </Card>
-
-          <div>
-            {filteredUsers.map((user) => (
-              <UserRow
-                key={user.id}
-                user={user}
-                expanded={expandedIds.has(user.id)}
-                onToggle={() => toggleExpanded(user.id)}
-              />
-            ))}
-          </div>
-        </>
-      )}
     </Flex>
   );
 }
