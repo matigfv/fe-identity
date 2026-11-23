@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Button, Form, Input, InputNumber, Modal, message } from "antd";
+import { Button, Form, InputNumber, Modal, Select, message } from "antd";
 import UserAddOutlined from "@ant-design/icons/UserAddOutlined";
+import { useAdminUsers } from "@/apis/hooks/useAdminUsers";
 import { useAddHouseholdMember } from "@/apis/hooks/useHouseholdMutations";
 
 interface Props {
@@ -18,6 +19,12 @@ export default function AddHouseholdMemberModal({ callerLevel }: Props) {
   const [form] = Form.useForm();
   const [open, setOpen] = useState(false);
   const addMutation = useAddHouseholdMember();
+  const { data: users, isLoading: usersLoading, isError: usersError } = useAdminUsers();
+  // El valor es el correo (el backend agrega por email); el label permite buscar por nombre.
+  const options = (users ?? []).map((u) => {
+    const name = [u.givenName, u.familyName].filter(Boolean).join(" ");
+    return { value: u.email, label: name ? `${name} (${u.email})` : u.email };
+  });
 
   const handleClose = () => {
     setOpen(false);
@@ -62,14 +69,18 @@ export default function AddHouseholdMemberModal({ callerLevel }: Props) {
           initialValues={{ level: callerLevel + 1 }}
         >
           <Form.Item
-            label="Correo electrónico"
+            label="Usuario"
             name="email"
-            rules={[
-              { required: true, message: "Por favor ingresá un correo" },
-              { type: "email", message: "Ingresá un correo válido" },
-            ]}
+            rules={[{ required: true, message: "Elegí un usuario" }]}
           >
-            <Input placeholder="usuario@ejemplo.com" />
+            <Select
+              showSearch
+              loading={usersLoading}
+              placeholder="Buscá por nombre o correo"
+              options={options}
+              optionFilterProp="label"
+              notFoundContent={usersError ? "No se pudo cargar la lista de usuarios" : "Sin resultados"}
+            />
           </Form.Item>
           <Form.Item
             label="Nivel"
