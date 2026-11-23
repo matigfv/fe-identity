@@ -14,6 +14,7 @@ import {
   Typography,
 } from "antd";
 import ApartmentOutlined from "@ant-design/icons/ApartmentOutlined";
+import HomeOutlined from "@ant-design/icons/HomeOutlined";
 import LogoutOutlined from "@ant-design/icons/LogoutOutlined";
 import MenuOutlined from "@ant-design/icons/MenuOutlined";
 import MoonOutlined from "@ant-design/icons/MoonOutlined";
@@ -44,6 +45,7 @@ interface SideBarItem {
 const NAV_ITEMS: SideBarItem[] = [
   { key: "users", icon: <TeamOutlined />, label: "Usuarios", path: "/users" },
   { key: "workspaces", icon: <ApartmentOutlined />, label: "Workspaces", path: "/workspaces" },
+  { key: "household", icon: <HomeOutlined />, label: "Household", path: "/household" },
 ];
 
 interface ProfileMenuItemProps {

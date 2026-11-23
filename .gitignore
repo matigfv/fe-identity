@@ -15,6 +15,10 @@ dist-ssr
 # Generado por @tanstack/router-plugin en cada dev/build — no se commitea
 src/routeTree.gen.ts
 
+# Herramientas de agentes de IA
+.claude/
+.agents/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
