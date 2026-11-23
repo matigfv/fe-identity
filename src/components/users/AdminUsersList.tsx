@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, Button, Card, ConfigProvider, Empty, Flex, Grid, Input, Select, Skeleton, Table, Tag, Typography, theme } from "antd";
+import { Alert, Button, Card, Checkbox, ConfigProvider, Empty, Flex, Grid, Input, Select, Skeleton, Table, Tag, Typography, theme } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import CheckCircleFilled from "@ant-design/icons/CheckCircleFilled";
 import CloseCircleOutlined from "@ant-design/icons/CloseCircleOutlined";
@@ -213,6 +213,7 @@ export default function AdminUsersList() {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [noWorkspace, setNoWorkspace] = useState(false);
   const [pendingTour, setPendingTour] = useState(false);
+  const [page, setPage] = useState(1);
 
   const hasFilters = types.length > 0 || roles.length > 0 || noWorkspace || pendingTour;
   const filteredUsers = useMemo(() => {
@@ -227,7 +228,16 @@ export default function AdminUsersList() {
     );
   }, [users, search, types, roles, noWorkspace, pendingTour]);
 
+  // Any change to the result set sends the user back to the first page.
+  const resetPage =
+    <T,>(set: (value: T) => void) =>
+    (value: T) => {
+      set(value);
+      setPage(1);
+    };
+
   const clearAll = () => {
+    setPage(1);
     setSearch("");
     setTypes([]);
     setRoles([]);
@@ -305,7 +315,7 @@ export default function AdminUsersList() {
           placeholder="Buscar por nombre, apellido o email"
           prefix={<SearchOutlined style={{ color: token.colorTextTertiary }} />}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => resetPage(setSearch)(e.target.value)}
         />
 
         <Flex gap={8} wrap align="center" style={{ margin: "12px 0 16px" }}>
@@ -317,7 +327,7 @@ export default function AdminUsersList() {
             aria-label="Filtrar por tipo"
             style={{ minWidth: 140 }}
             value={types}
-            onChange={setTypes}
+            onChange={resetPage(setTypes)}
             options={Object.entries(USER_TYPE_LABEL).map(([value, label]) => ({ value, label }))}
           />
           <Select
@@ -328,15 +338,15 @@ export default function AdminUsersList() {
             aria-label="Filtrar por rol"
             style={{ minWidth: 140 }}
             value={roles}
-            onChange={setRoles}
+            onChange={resetPage(setRoles)}
             options={Object.entries(USER_ROLE_LABEL).map(([value, label]) => ({ value, label }))}
           />
-          <Tag.CheckableTag checked={noWorkspace} onChange={setNoWorkspace}>
+          <Checkbox checked={noWorkspace} onChange={(e) => resetPage(setNoWorkspace)(e.target.checked)}>
             Sin workspace
-          </Tag.CheckableTag>
-          <Tag.CheckableTag checked={pendingTour} onChange={setPendingTour}>
+          </Checkbox>
+          <Checkbox checked={pendingTour} onChange={(e) => resetPage(setPendingTour)(e.target.checked)}>
             Onboarding pendiente
-          </Tag.CheckableTag>
+          </Checkbox>
           {users && !isLoading && (
             <Text type="secondary" style={{ fontSize: 13, marginInlineStart: "auto" }} aria-live="polite">
               {filteredUsers.length} de {users.length} usuarios
@@ -376,7 +386,7 @@ export default function AdminUsersList() {
             rowKey="id"
             columns={columns}
             dataSource={filteredUsers}
-            pagination={{ pageSize: PAGE_SIZE, showSizeChanger: false, hideOnSinglePage: true }}
+            pagination={{ current: page, onChange: setPage, pageSize: PAGE_SIZE, showSizeChanger: false, hideOnSinglePage: true }}
             tableLayout="fixed"
             sticky={{ offsetHeader: 56 }}
             expandable={{ expandedRowRender: (user) => <UserDetails user={user} compact={!screens.md} /> }}
