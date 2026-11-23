@@ -63,9 +63,11 @@ const MAX_LEVEL = 99;
 function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerLevel: number }) {
   const [open, setOpen] = useState(false);
   const [level, setLevel] = useState<number | null>(member.level);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const changeMutation = useChangeHouseholdMemberLevel();
   const handleSave = () => {
-    if (level === null) return;
+    if (level === null || changeMutation.isPending) return;
+    setSaveError(null);
     changeMutation.mutate(
       { userId: member.userId, level },
       {
@@ -74,7 +76,7 @@ function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerL
           setOpen(false);
         },
         onError: (error) =>
-          message.error(errorStatus(error) === 403 ? "No tenés permiso para asignar ese nivel" : "Error al cambiar el nivel"),
+          setSaveError(errorStatus(error) === 403 ? "No tenés permiso para asignar ese nivel" : "No se pudo cambiar el nivel. Probá de nuevo."),
       },
     );
   };
@@ -82,31 +84,67 @@ function ChangeLevel({ member, callerLevel }: { member: HouseholdMember; callerL
     <Popover
       open={open}
       onOpenChange={(next) => {
-        if (next) setLevel(member.level);
+        if (next) {
+          setLevel(member.level);
+          setSaveError(null);
+        }
         setOpen(next);
       }}
       trigger="click"
       title="Cambiar nivel"
       content={
-        <Flex gap={8}>
-          <InputNumber min={callerLevel + 1} max={MAX_LEVEL} precision={0} value={level} onChange={setLevel} aria-label="Nivel" />
-          <Button onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button type="primary" loading={changeMutation.isPending} onClick={handleSave}>
-            Guardar
-          </Button>
+        <Flex vertical gap={8}>
+          <Flex gap={8}>
+            <InputNumber
+              autoFocus
+              min={callerLevel + 1}
+              max={MAX_LEVEL}
+              precision={0}
+              value={level}
+              onChange={(v) => {
+                setLevel(v);
+                setSaveError(null);
+              }}
+              onPressEnter={handleSave}
+              aria-label="Nivel"
+              status={saveError ? "error" : undefined}
+            />
+            <Button onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button type="primary" loading={changeMutation.isPending} onClick={handleSave}>
+              Guardar
+            </Button>
+          </Flex>
+          {saveError && (
+            <Text type="danger" role="alert">
+              {saveError}
+            </Text>
+          )}
         </Flex>
       }
     >
-      <Tooltip title="Cambiar nivel">
+      <Tooltip title="Cambiar nivel" open={open ? false : undefined}>
         <Button icon={<EditOutlined />} aria-label={`Cambiar nivel de ${memberName(member)}`} />
       </Tooltip>
     </Popover>
   );
 }
 
+// Only claims what the model knows: a level comparison, otherwise a neutral message.
+function lockReason(member: HouseholdMember, callerLevel?: number): string {
+  if (callerLevel !== undefined && member.level <= callerLevel) {
+    return "Tiene tu mismo nivel o uno superior, por eso no podés gestionarlo";
+  }
+  return "No tenés permiso para gestionar a este miembro";
+}
+
+function lockLabel(member: HouseholdMember, callerLevel?: number): string {
+  return callerLevel !== undefined && member.level <= callerLevel ? "Mismo nivel o superior" : "Sin permiso";
+}
+
 function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLevel?: number }) {
   const { token } = theme.useToken();
   const removeMutation = useRemoveHouseholdMember();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const handleRemove = () =>
     removeMutation.mutate(member.userId, {
       onSuccess: () => message.success(`${memberName(member)} fue eliminado del household`),
@@ -127,12 +165,26 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
           {member.self && <Tag color="blue">Vos</Tag>}
           {member.supervised && <Tag color="gold" icon={<EyeOutlined />}>Supervisado</Tag>}
         </Flex>
-        {!member.canManage && (
-          <Tooltip title="No podés gestionar a este miembro">
-            <span tabIndex={0} role="img" aria-label="No podés gestionar a este miembro" style={{ color: token.colorTextSecondary }}>
+        {!member.canManage && !member.self && (
+          <Tooltip title={lockReason(member, callerLevel)}>
+            <Flex
+              tabIndex={0}
+              role="img"
+              aria-label={lockReason(member, callerLevel)}
+              align="center"
+              gap={4}
+              style={{ color: token.colorTextSecondary, fontSize: 12, maxWidth: "100%" }}
+            >
               <LockOutlined />
-            </span>
+              {/* Visible without hover: touch has no tooltip. */}
+              <span>{lockLabel(member, callerLevel)}</span>
+            </Flex>
           </Tooltip>
+        )}
+        {member.canManage && callerLevel === undefined && (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Acciones no disponibles: no pudimos determinar tu nivel.
+          </Text>
         )}
         {member.canManage && callerLevel !== undefined && (
           <Flex gap={8}>
@@ -144,8 +196,10 @@ function MemberCard({ member, callerLevel }: { member: HouseholdMember; callerLe
               cancelText="Cancelar"
               okButtonProps={{ danger: true, loading: removeMutation.isPending }}
               onConfirm={handleRemove}
+              open={confirmOpen}
+              onOpenChange={setConfirmOpen}
             >
-              <Tooltip title="Sacar del household">
+              <Tooltip title="Sacar del household" open={confirmOpen ? false : undefined}>
                 <Button danger icon={<DeleteOutlined />} aria-label={`Sacar a ${memberName(member)}`} />
               </Tooltip>
             </Popconfirm>
