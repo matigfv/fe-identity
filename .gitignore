@@ -18,6 +18,8 @@ src/routeTree.gen.ts
 # Herramientas de agentes de IA
 .claude/
 .agents/
+.github/
+.atl/
 
 # Editor directories and files
 .vscode/*
